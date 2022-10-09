@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html xmlns:th="http://thymeleaf.org"
+      xmlns:padding="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+
+    <title>展示</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- layui -->
+    <link th:href="@{/layui/css/layui.css}" rel="stylesheet">
+    <script th:src="@{/layui/layui.js}"></script>
+
+    <!-- 引入刚刚下载的 ECharts 文件 -->
+    <script th:src="@{/echarts/echarts.min.js}"></script>
+    <script th:src="@{/echarts/china.js}"></script>
+    <script th:src="@{/echarts/jquery-1.11.1.min.js}"></script>
+
+</head>
+
+<body class="childrenBody">
+
+    <div>
+
+        <div class="layui-bg-gray" style="padding: 15px;">
+            <div class="layui-row layui-col-space15">
+                <div class="layui-col-md8">
+                    <div class="layui-panel">
+                        <!--        全国主要数据-->
+                        <div class="layui-btn-container" style="padding-left: 30px">
+                            <button type="button" class="layui-btn layui-bg-red" th:text="'现有确诊:'+${chinaTotal.confirm-chinaTotal.heal-chinaTotal.dead}"></button>
+                            <button type="button" class="layui-btn layui-bg-orange" th:text="'境外:'+${chinaTotal.input}"></button>
+                            <button type="button" class="layui-btn layui-bg-green" th:text="'治愈:'+${chinaTotal.heal}"></button>
+                            <button type="button" class="layui-btn layui-bg-black" th:text="'死亡:'+${chinaTotal.dead}"></button>
+                        </div>
+                        <!--中国地图-->
+                        <div id="main" style="width: 700px;height:600px;"></div>
+                    </div>
+                </div>
+                <div class="layui-col-md4">
+                    <div class="layui-panel">
+                        <div class="layui-carousel" id="banner" lay-filter="banner">
+                            <!--轮播图-->
+                            <div carousel-item="">
+                                <div><img style="width: 100%;height: 100%" th:src="@{/images/banner/banner1.jpg}"></div>
+                                <div><img style="width: 100%;height: 100%" th:src="@{/images/banner/banner2.jpg}"></div>
+                                <div><img style="width: 100%;height: 100%" th:src="@{/images/banner/banner3.jpg}"></div>
+                            </div>
+                        </div>
+                        <!--新闻时间线-->
+                        <div style="padding-top: 15px">
+                            <ul th:each="news : ${news}"  class="layui-timeline">
+                                <li class="layui-timeline-item">
+                                    <i class="layui-icon layui-timeline-axis"></i>
+                                    <div class="layui-timeline-content layui-text">
+                                        <h5 class="layui-timeline-title" th:text="${#dates.format(news.createTime,'yyyy-MM-dd HH:ss')}"></h5>
+                                        <p>
+                                            <span class="layui-badge layui-bg-blue">标题:</span><span/><span th:text="${news.title}"></span>
+                                            <br><span class="layui-badge layui-bg-blue">内容:</span><span/><span th:text="${news.content}"></span>
+                                            <br><span class="layui-badge layui-bg-blue">发布:</span><span/><span th:text="${news.publishby}"></span>
+                                        </p>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+<script>
+    //JS
+    layui.use(['carousel','element', 'layer', 'util'], function(){
+        var element = layui.element
+            ,layer = layui.layer
+            ,util = layui.util
+            ,$ = layui.$
+            ,carousel = layui.carousel
+            ,form = layui.form;
+
+
+        //头部事件
+        util.event('lay-header-event', {
+            //左侧菜单事件
+            menuLeft: function(othis){
+                layer.msg('展开左侧菜单的操作', {icon: 0});
+            }
+            ,menuRight: function(){
+                layer.open({
+                    type: 1
+                    ,content: '<div style="padding: 15px;">处理右侧面板的操作</div>'
+                    ,area: ['260px', '100%']
+                    ,offset: 'rt' //右上角
+                    ,anim: 5
+                    ,shadeClose: true
+                });
+            }
+        });
+
+        //常规轮播
+        carousel.render({
+            elem: '#banner'
+            ,height: '220px'
+            ,width: '420px'
+        });
+
+    });
+</script>
+
+<script type="text/javascript">
+    // 基于准备好的dom，初始化echarts实例
+    var myChart = echarts.init(document.getElementById('main'));
+
+    // var dataList = [];
+    option = {
+        tooltip: {
+            triggerOn: "click",
+            formatter: function(e, t, n) {
+                return '.5' == e.value ? e.name + "：有疑似病例" : e.seriesName + "<br />" + e.name + "：" + e.value
+            }
+        },
+        toolbox: {
+            show: true,
+            orient: 'vertical',
+            left: 'right',
+            top: 'center',
+            feature: {
+                dataView: {readOnly: false},
+                restore: {},
+                saveAsImage: {}
+            }
+        }, // 提供下载工具
+        visualMap: {
+            min: 0,
+            max: 100000,
+            left: 26,
+            bottom: 40,
+            showLabel: !0,
+            text: ["高", "低"],
+            pieces: [{
+                gt: 10000,
+                label: "> 10000人",
+                color: "#7f1100"
+            }, {
+                gte: 1000,
+                lte: 10000,
+                label: "1000 - 10000人",
+                color: "#ff5428"
+            }, {
+                gte: 100,
+                lt: 1000,
+                label: "100 - 1000人",
+                color: "#ff8c71"
+            }, {
+                gt: 10,
+                lt: 100,
+                label: "10 - 100人",
+                color: "#ffd768"
+            }, {
+                gt: 1,
+                lt: 10,
+                label: "1 - 10人",
+                color: "#ffffff"
+            }],
+            show: !0
+        },
+        geo: {
+            map: "china",
+            roam: !1,
+            scaleLimit: {
+                min: 1,
+                max: 2
+            },
+            zoom: 1.23,
+            top: 120,
+            label: {
+                normal: {
+                    show: !0,
+                    fontSize: "14",
+                    color: "rgba(0,0,0,0.7)"
+                }
+            },
+            itemStyle: {
+                normal: {
+                    //shadowBlur: 50,
+                    //shadowColor: 'rgba(0, 0, 0, 0.2)',
+                    borderColor: "rgba(0, 0, 0, 0.2)"
+                },
+                emphasis: {
+                    areaColor: "#f2d5ad",
+                    shadowOffsetX: 0,
+                    shadowOffsetY: 0,
+                    borderWidth: 0
+                }
+            }
+        }
+    };
+
+    $.ajax({
+        url: "/queryMap",
+        dataType: "json",
+        success: function (data){
+            // for (let i in data){
+            //     dataList[i]=data[i];
+            // }
+            myChart.setOption({
+                series:[
+                    {
+                        name: "确诊病例",
+                        type: "map",
+                        geoIndex: 0,
+                        data: data
+                    }
+                ]
+            })
+        }
+    });
+
+
+
+    // 使用刚指定的配置项和数据显示图表。
+    myChart.setOption(option);
+</script>
+
+</body>
+</html>
